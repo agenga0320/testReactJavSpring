@@ -1,0 +1,9 @@
+testbatch,2025/07/21,13:00,14:59,society
+testbatch2,2025/07/21,11:00,12:59,improvement
+testtrue,2025/07/20,00:00,00:30,life
+testfalse,2025/07/20,01:01,01:02,milk
+testfalse,2025/07/23,12:12,13:13,other
+testfalse,2025/17/20,09:09,09:10,other
+testfalse,2025/07/20,13:12,12:13,other
+testfalse,2025/07/20,14;14,15;15,other
+testtrue,2025/07/20,02:02,04:04,improvement
