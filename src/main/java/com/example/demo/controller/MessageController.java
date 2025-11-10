@@ -1,9 +1,14 @@
 package com.example.demo.controller;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +16,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.demo.model.Message;
+import com.example.demo.service.JobRunner;
 import com.example.demo.service.MessageService;
 
 
@@ -20,11 +27,11 @@ import com.example.demo.service.MessageService;
 @CrossOrigin(origins = "http://localhost:3000") // React 側からのアクセスを許可
 public class MessageController {
 
-    private final MessageService messageService;
+    @Autowired
+    private MessageService messageService;
 
-    public MessageController(MessageService messageService) {
-        this.messageService = messageService;
-    }
+    @Autowired
+    private JobRunner jobRunner;
 
     @GetMapping("/api/get-message")
     public List<Message> getMessage(@RequestParam String date) {
@@ -101,7 +108,7 @@ public class MessageController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        long id = messageService.getMessageId(startDate, startTime, endTime, title, category);
+        long id = messageService.getMessageIdbyDateAndStartTime(startDate, startTime);
         if (id == -1) {
             response.put("status", "error");
             response.put("message", "Message not found.");
@@ -148,7 +155,7 @@ public class MessageController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        long id = messageService.getMessageId(oldStartDate, oldStartTime, oldEndTime, oldTitle, oldCategory);
+        long id = messageService.getMessageIdbyDateAndStartTime(oldStartDate, oldStartTime);
         if (id == -1) {
             response.put("status", "error");
             response.put("message", "Message not found.");
@@ -162,5 +169,42 @@ public class MessageController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/api/upload-csv")
+    public ResponseEntity<Map<String, String>> uploadCsv(@RequestParam("file") MultipartFile file) {
+        final String UPLOAD_DIR = "C:/Users/S0000061/Documents/demo/uploaded_file/";
+        Map<String, String> response = new HashMap<>();
+        if (file == null || file.isEmpty()) {
+            response.put("status", "error");
+            response.put("message", "No messages to upload.");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            String formattedDateTime = now.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename = UPLOAD_DIR + formattedDateTime + "_" + file.getOriginalFilename();
+            File uploadFile = new File(filename);
+            file.transferTo(uploadFile);
+
+            try {
+                jobRunner.runUploadCsvJob(filename); // ジョブを実行してCSVファイルを処理
+            } catch (Exception e) {
+                response.put("status", "error");
+                response.put("message", "ジョブの実行中にエラーが発生しました。");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(response);
+            }
+
+        } catch (IOException e) {
+            response.put("status", "error");
+            response.put("message", "ファイルの保存に失敗しました。");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(response);
+        }
+
+        response.put("status", "success");
+        response.put("message", "Messages uploaded successfully.");
+        return ResponseEntity.ok(response);
+    }
 }
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Record;
@@ -13,10 +14,9 @@ import com.example.demo.repository.MessageRepository;
 
 @Service
 public class MessageService {
-    private final MessageRepository messageRepository;
-    public MessageService(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
-    }
+
+    @Autowired
+    private MessageRepository messageRepository;
     
     public List<Message> sortMessagesByTime(List<Message> messages) {
         messages.sort((m1, m2) -> {
@@ -96,11 +96,10 @@ public class MessageService {
     }
 
     @Transactional
-    public long getMessageId(String startDate, String startTime, String endTime, String title, String category) {
+    public long getMessageIdbyDateAndStartTime(String startDate, String startTime) {
         List<Record> records = messageRepository.findByStartDate(startDate);
         for (Record record : records) {
-            if (record.getStartTime().equals(startTime) && record.getEndTime().equals(endTime) &&
-                record.getTitle().equals(title) && record.getCategory().equals(category)) {
+            if (record.getStartTime().equals(startTime)) {
                 return record.getId();
             }
         }
@@ -109,7 +108,8 @@ public class MessageService {
 
     @Transactional
     public void updateMessage(Long id, String startDate, String startTime, String endTime, String title, String category) {
-        Record record = messageRepository.findById(id).orElseThrow(() -> new RuntimeException("Message not found"));
+        Record record = new Record();
+        record.setId(id);
         record.setStartDate(startDate);
         record.setStartTime(startTime);
         record.setEndTime(endTime);

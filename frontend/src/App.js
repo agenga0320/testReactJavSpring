@@ -269,6 +269,47 @@ function App() {
     }
   };
 
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const handleShowUploadButtonClick = () => {
+    setShowUploadModal(true);
+  };
+
+  const [uploadFile, setUploadFile] = useState(null);
+
+  const handleChangeUploadFile = (event) => {
+    setUploadFile(event.target.files[0]);
+  };
+
+  const handleUploadButtonClick = async (e) => {
+    e.preventDefault(); // ページリロードを防ぐ
+    if (!uploadFile) {
+      alert('アップロードするファイルを選択してください。');
+      return;
+    } 
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    try {
+      const res = await fetch('http://localhost:8080/api/upload-csv', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json(); // サーバーからのレスポンスを取得
+      if (res.ok) {
+        alert('アップロード成功');
+        console.log('アップロード成功:', data);
+        getMessage();
+      } else {
+        alert('アップロード失敗: ' + data.message);
+        console.error('アップロード失敗:', data);
+      }
+    } catch (error) {
+      console.error('アップロードエラー:', error);
+      alert('アップロード中にエラーが発生しました。');
+    }
+    setShowUploadModal(false);
+    setUploadFile(null); // アップロード後にファイルをリセット
+  };
+
   const checkInput = () => {
     
     let message = '';
@@ -376,14 +417,18 @@ function App() {
     </button>
 
     {showDatePicker && (
-      <DatePicker
-        selected={new Date(selectedDate)}
-        onChange={handleChangeSelectedDate}
-        inline
-        dateFormat="yyyy/MM/dd"
-        className="date-picker"
-        maxDate={new Date()} 
-      />
+      <div className='modal-overlay' onClick={() => setShowDatePicker(false)}>
+        <div className='modal-content center' onClick={(e) => e.stopPropagation()}> 
+          <DatePicker
+            selected={new Date(selectedDate)}
+            onChange={handleChangeSelectedDate}
+            inline
+            dateFormat="yyyy/MM/dd"
+            className="date-picker"
+            maxDate={new Date()} 
+          />
+        </div>
+      </div>
     )}
 
     <p>{selectedDate}</p>
@@ -424,9 +469,18 @@ function App() {
       </tbody>
     </table>
 
+    <br></br>
+
     <button
       onClick={handleAddButtonClick} style={{ padding: '8px 16px', fontSize: '16px' }}>
         <span>スケジュール入力</span>
+    </button>
+
+    <br></br>
+
+    <button
+      onClick={handleShowUploadButtonClick} style={{ padding: '8px 16px', fontSize: '16px' }}>
+        <span>スケジュールアップロード(.csv)</span>
     </button>
 
     {showModal && (
@@ -533,6 +587,26 @@ function App() {
                   <span>更新</span>
               </button>
             )}
+          </form>
+        </div>
+      </div>
+    )}
+
+    {showUploadModal && (
+      <div className='modal-overlay' onClick={() => setShowUploadModal(false)}>
+        <div className='modal-content' onClick={(e) => e.stopPropagation()}> 
+          <form className='modal-form'>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleChangeUploadFile}
+            />
+            <button
+              className='upload-form-button'
+              onClick={handleUploadButtonClick} 
+              type="submit">
+                <span>アップロード</span>
+            </button>
           </form>
         </div>
       </div>

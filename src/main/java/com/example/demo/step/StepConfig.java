@@ -12,6 +12,7 @@ import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -28,11 +29,12 @@ public class StepConfig {
     @Autowired
     private StepBuilderFactory stepBuilderFactory;
 
-    @Bean
-    public Step sampleStep() {
-        return stepBuilderFactory.get("sampleStep")
+        @Bean
+        @StepScope
+    public Step uploadCsvStep(@Value("#{jobParameters['file_name']}") String fileName) {
+        return stepBuilderFactory.get("uploadCsvStep")
             .<Message, Message>chunk(10)
-            .reader(readUploadedCsv())
+            .reader(readUploadedCsv(fileName))
             .processor((ItemProcessor<Message, Message>) item -> {
                 return checkMessage(item); // ここでは何も処理しない
             }) 
@@ -48,7 +50,8 @@ public class StepConfig {
             .build();
     }
 
-    private Message checkMessage(Message item) {
+    @StepScope
+    public Message checkMessage(Message item) {
         Console console = System.console();
         if (item.getTitle() == null ||  item.getDate() == null || item.getStartTime() == null || item.getEndTime() == null || item.getCategory() == null) {
             console.printf("Invalid message: %s\n", "null");
@@ -115,11 +118,10 @@ public class StepConfig {
     }
 
     @StepScope
-    public FlatFileItemReader<Message> readUploadedCsv() {   
-        String filePath = "C:/Users/S0000061/Documents/demo/uploaded_file/test.csv";
+    public FlatFileItemReader<Message> readUploadedCsv(String fileName) {   
         return new FlatFileItemReaderBuilder<Message>()
             .name("csvReader")
-            .resource(new FileSystemResource(filePath))
+            .resource(new FileSystemResource(fileName))
             .lineMapper(new DefaultLineMapper<>() {{
                 setLineTokenizer(new DelimitedLineTokenizer() {{
                     setNames("name", "date", "startTime", "endTime", "category");
