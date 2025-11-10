@@ -29,12 +29,11 @@ public class StepConfig {
     @Autowired
     private StepBuilderFactory stepBuilderFactory;
 
-        @Bean
-        @StepScope
-    public Step uploadCsvStep(@Value("#{jobParameters['file_name']}") String fileName) {
+    @Bean
+    public Step uploadCsvStep(FlatFileItemReader<Message> readUploadedCsv) {
         return stepBuilderFactory.get("uploadCsvStep")
             .<Message, Message>chunk(10)
-            .reader(readUploadedCsv(fileName))
+            .reader(readUploadedCsv)
             .processor((ItemProcessor<Message, Message>) item -> {
                 return checkMessage(item); // ここでは何も処理しない
             }) 
@@ -50,7 +49,6 @@ public class StepConfig {
             .build();
     }
 
-    @StepScope
     public Message checkMessage(Message item) {
         Console console = System.console();
         if (item.getTitle() == null ||  item.getDate() == null || item.getStartTime() == null || item.getEndTime() == null || item.getCategory() == null) {
@@ -117,8 +115,9 @@ public class StepConfig {
         return item;
     }
 
+    @Bean
     @StepScope
-    public FlatFileItemReader<Message> readUploadedCsv(String fileName) {   
+    public FlatFileItemReader<Message> readUploadedCsv(@Value("#{jobParameters['file_name']}") String fileName) {   
         return new FlatFileItemReaderBuilder<Message>()
             .name("csvReader")
             .resource(new FileSystemResource(fileName))

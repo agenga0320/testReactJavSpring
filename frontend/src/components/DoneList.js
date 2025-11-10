@@ -418,19 +418,14 @@ function DoneList() {
             toggleDatePicker={handleDatePicker}
         />
 
-    <p className="date-display" onClick={handleDatePicker} style={{ cursor: 'pointer' }}>{selectedDate}</p>
-
+        <p className="date-display" onClick={handleDatePicker} style={{ cursor: 'pointer' }}>{selectedDate}</p>
         <MessageTable response={response} onDeleteClick={handleDeleteButtonClick} onEditClick={handleRewriteButtonClick} />
-
         <br />
-
-                <div className="actions-row">
-                    <button onClick={handleAddButtonClick} className="btn btn-primary">スケジュール入力</button>
-
-        <br />
-
-                    <button onClick={handleShowUploadButtonClick} className="btn">スケジュールアップロード(.csv)</button>
-                </div>
+        <div className="actions-row">
+            <button onClick={handleAddButtonClick} className="btn btn-primary">スケジュール入力</button>
+            <br />
+            <button onClick={handleShowUploadButtonClick} className="btn">スケジュールアップロード(.csv)</button>
+        </div>
 
         <ScheduleModal
             visible={showModal}
